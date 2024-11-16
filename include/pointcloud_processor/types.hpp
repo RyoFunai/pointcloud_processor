@@ -71,4 +71,5 @@ struct Parameters
   double width_tolerance, height_tolerance;
   double laser_weight, odom_weight_liner, odom_weight_angler;
   int plane_iterations, line_iterations;
+  double odom2laser_x, odom2laser_y;
 };

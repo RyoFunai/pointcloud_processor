@@ -4,25 +4,58 @@
 #include <cstring>
 #include <chrono>
 #include <rclcpp/rclcpp.hpp>
+
 PointCloudProcessor::PointCloudProcessor(const Parameters &params)
     : params_(params)
 {
 }
 
-std::vector<Point3D> PointCloudProcessor::process_pointcloud(const sensor_msgs::msg::PointCloud2 &cloud_msg)
+std::vector<Point3D> PointCloudProcessor::process_pointcloud_old(const sensor_msgs::msg::PointCloud2 &cloud_msg)
 {
   auto points = PC2_to_vector(cloud_msg);
-
   auto transformed_points = axis_image2robot(points);
-
   auto filtered_points = filter_points(transformed_points);
-
-  auto start_voxel_downsample = std::chrono::high_resolution_clock::now();
   voxel_downsample(filtered_points);
-  auto duration_voxel_downsample = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_voxel_downsample).count();
-  RCLCPP_INFO(rclcpp::get_logger("pointcloud_processor"), "voxel_downsample took %ld ms", duration_voxel_downsample);
-
   return filtered_points;
+}
+
+std::vector<Point3D> PointCloudProcessor::process_pointcloud(const sensor_msgs::msg::PointCloud2 &cloud_msg)
+{
+  size_t num_points = cloud_msg.width * cloud_msg.height;
+  std::vector<Point3D> processed_points;
+  processed_points.reserve(num_points);
+
+  const size_t point_step = cloud_msg.point_step;
+  const size_t x_offset = cloud_msg.fields[0].offset;
+  const size_t y_offset = cloud_msg.fields[1].offset;
+  const size_t z_offset = cloud_msg.fields[2].offset;
+
+  // PC2_to_vector、axis_image2robot、filter_points を統合して効率化
+  for (size_t i = 0; i < num_points; ++i)
+  {
+    size_t data_index = i * point_step;
+    Point3D point;
+    memcpy(&point.x, &cloud_msg.data[data_index + x_offset], sizeof(float));
+    memcpy(&point.y, &cloud_msg.data[data_index + y_offset], sizeof(float));
+    memcpy(&point.z, &cloud_msg.data[data_index + z_offset], sizeof(float));
+
+    // 座標変換
+    Point3D transformed;
+    transformed.x = point.z;
+    transformed.y = point.x;
+    transformed.z = -point.y;
+
+    // フィルタリング
+    if (transformed.x != 0.0f && transformed.y != 0.0f && transformed.z != 0.0f &&
+        transformed.x >= params_.min_x && transformed.x <= params_.max_x &&
+        transformed.y >= params_.min_y && transformed.y <= params_.max_y &&
+        transformed.z >= params_.min_z && transformed.z <= params_.max_z)
+    {
+      processed_points.emplace_back(transformed);
+    }
+  }
+  voxel_downsample(processed_points);
+  return downsampled_points_;
 }
 
 std::vector<Point3D> PointCloudProcessor::get_downsampled_points() const
@@ -160,6 +193,24 @@ std::vector<Point3D> PointCloudProcessor::filter_points(const std::vector<Point3
 
 void PointCloudProcessor::voxel_downsample(const std::vector<Point3D> &input)
 {
+  struct Voxel
+  {
+    int x, y, z;
+
+    bool operator==(const Voxel &other) const
+    {
+      return x == other.x && y == other.y && z == other.z;
+    }
+  };
+
+  struct VoxelHash
+  {
+    std::size_t operator()(const Voxel &voxel) const
+    {
+      return std::hash<int>()(voxel.x) ^ (std::hash<int>()(voxel.y) << 1) ^ (std::hash<int>()(voxel.z) << 2);
+    }
+  };
+
   std::unordered_map<Voxel, std::vector<Point3D>, VoxelHash> voxel_map;
   voxel_map.reserve(input.size() / 4); // 予備サイズを設定
   downsampled_points_.clear();

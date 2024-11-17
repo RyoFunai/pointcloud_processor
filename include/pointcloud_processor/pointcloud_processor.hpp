@@ -20,6 +20,24 @@ public:
   sensor_msgs::msg::PointCloud2 vector_to_PC2(const std::vector<Point3D> &points) const;
 
 private:
+  struct Voxel
+  {
+    int x, y, z;
+
+    bool operator==(const Voxel &other) const
+    {
+      return x == other.x && y == other.y && z == other.z;
+    }
+  };
+
+  struct VoxelHash
+  {
+    std::size_t operator()(const Voxel &voxel) const
+    {
+      return std::hash<int>()(voxel.x) ^ (std::hash<int>()(voxel.y) << 1) ^ (std::hash<int>()(voxel.z) << 2);
+    }
+  };
+
   Parameters params_;
   std::vector<Point3D> downsampled_points_;
 

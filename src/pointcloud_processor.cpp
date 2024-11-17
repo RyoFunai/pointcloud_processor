@@ -2,7 +2,8 @@
 #include <unordered_map>
 #include <cmath>
 #include <cstring>
-
+#include <chrono>
+#include <rclcpp/rclcpp.hpp>
 PointCloudProcessor::PointCloudProcessor(const Parameters &params)
     : params_(params)
 {
@@ -11,9 +12,16 @@ PointCloudProcessor::PointCloudProcessor(const Parameters &params)
 std::vector<Point3D> PointCloudProcessor::process_pointcloud(const sensor_msgs::msg::PointCloud2 &cloud_msg)
 {
   auto points = PC2_to_vector(cloud_msg);
+
   auto transformed_points = axis_image2robot(points);
+
   auto filtered_points = filter_points(transformed_points);
+
+  auto start_voxel_downsample = std::chrono::high_resolution_clock::now();
   voxel_downsample(filtered_points);
+  auto duration_voxel_downsample = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_voxel_downsample).count();
+  RCLCPP_INFO(rclcpp::get_logger("pointcloud_processor"), "voxel_downsample took %ld ms", duration_voxel_downsample);
+
   return filtered_points;
 }
 
@@ -114,19 +122,59 @@ std::vector<Point3D> PointCloudProcessor::filter_points(const std::vector<Point3
   return output;
 }
 
+// void PointCloudProcessor::voxel_downsample(const std::vector<Point3D> &input)
+// {
+//   std::unordered_map<std::string, std::vector<Point3D>> voxel_map;
+//   downsampled_points_.clear();
+
+//   for (const auto &point : input)
+//   {
+//     int voxel_x = static_cast<int>(std::floor(point.x / params_.D_voxel_size_x));
+//     int voxel_y = static_cast<int>(std::floor(point.y / params_.D_voxel_size_y));
+//     int voxel_z = static_cast<int>(std::floor(point.z / params_.D_voxel_size_z));
+//     std::string key = std::to_string(voxel_x) + "_" + std::to_string(voxel_y) + "_" + std::to_string(voxel_z);
+//     voxel_map[key].push_back(point);
+//   }
+
+//   for (const auto &voxel : voxel_map)
+//   {
+//     const auto &points = voxel.second;
+//     if (points.size() < 4)
+//       continue;
+
+//     float sum_x = 0.0f, sum_y = 0.0f, sum_z = 0.0f;
+//     for (const auto &p : points)
+//     {
+//       sum_x += p.x;
+//       sum_y += p.y;
+//       sum_z += p.z;
+//     }
+
+//     Point3D centroid;
+//     centroid.x = sum_x / points.size();
+//     centroid.y = sum_y / points.size();
+//     centroid.z = sum_z / points.size();
+//     downsampled_points_.push_back(centroid);
+//   }
+// }
+
 void PointCloudProcessor::voxel_downsample(const std::vector<Point3D> &input)
 {
-  std::unordered_map<std::string, std::vector<Point3D>> voxel_map;
+  std::unordered_map<Voxel, std::vector<Point3D>, VoxelHash> voxel_map;
+  voxel_map.reserve(input.size() / 4); // 予備サイズを設定
   downsampled_points_.clear();
+  downsampled_points_.reserve(input.size() / 4); // 予備サイズを設定
 
   for (const auto &point : input)
   {
-    int voxel_x = static_cast<int>(std::floor(point.x / params_.D_voxel_size_x));
-    int voxel_y = static_cast<int>(std::floor(point.y / params_.D_voxel_size_y));
-    int voxel_z = static_cast<int>(std::floor(point.z / params_.D_voxel_size_z));
-    std::string key = std::to_string(voxel_x) + "_" + std::to_string(voxel_y) + "_" + std::to_string(voxel_z);
-    voxel_map[key].push_back(point);
+    Voxel voxel;
+    voxel.x = static_cast<int>(std::floor(point.x / params_.D_voxel_size_x));
+    voxel.y = static_cast<int>(std::floor(point.y / params_.D_voxel_size_y));
+    voxel.z = static_cast<int>(std::floor(point.z / params_.D_voxel_size_z));
+    voxel_map[voxel].emplace_back(point);
   }
+
+  downsampled_points_.reserve(voxel_map.size());
 
   for (const auto &voxel : voxel_map)
   {
@@ -146,6 +194,6 @@ void PointCloudProcessor::voxel_downsample(const std::vector<Point3D> &input)
     centroid.x = sum_x / points.size();
     centroid.y = sum_y / points.size();
     centroid.z = sum_z / points.size();
-    downsampled_points_.push_back(centroid);
+    downsampled_points_.emplace_back(centroid);
   }
 }

@@ -20,13 +20,12 @@ public:
   // ベクトルからPointCloud2への変換
   sensor_msgs::msg::PointCloud2 vector_to_PC2(const std::vector<Point3D> &points) const;
   std::vector<Point3D> PC2_to_vector(const sensor_msgs::msg::PointCloud2 &cloud_msg) const;
+  std::vector<Point3D> filter_points(const std::vector<Point3D> &input) const;
 
 private:
   Parameters params_;
   std::vector<Point3D> downsampled_points_;
 
-  // 内部で使用する関数
   std::vector<Point3D> axis_image2robot(const std::vector<Point3D> &input) const;
-  std::vector<Point3D> filter_points(const std::vector<Point3D> &input) const;
   void voxel_downsample(const std::vector<Point3D> &input);
 };

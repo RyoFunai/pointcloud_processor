@@ -88,7 +88,7 @@ Visualization Manager:
       Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        min_x_points: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -148,7 +148,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -169,7 +169,7 @@ Visualization Manager:
         Value: /downsampled_points
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/Marker
       Enabled: true
       Name: Marker
@@ -247,8 +247,7 @@ Visualization Manager:
       Enabled: true
       Name: Marker
       Namespaces:
-        robot: true
-        robot_vector: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -336,25 +335,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 10.963249206542969
+      Distance: 7.207508087158203
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.2177674770355225
-        Y: 0.7646933197975159
-        Z: 0.10339900851249695
+        X: 0.6181269288063049
+        Y: 1.398375391960144
+        Z: -0.3114173412322998
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8552021980285645
+      Pitch: 0.46020230650901794
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.280411720275879
+      Yaw: 4.215419769287109
     Saved: ~
 Window Geometry:
   Displays:

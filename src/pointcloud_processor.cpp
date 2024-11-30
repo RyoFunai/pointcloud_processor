@@ -152,7 +152,9 @@ std::vector<Point3D> PointCloudProcessor::filter_points_base_origin(double x, do
   double temp_max_y = params_.max_y - y;
   double temp_min_z = params_.min_z;
   double temp_max_z = params_.max_z;
-  // RCLCPP_INFO(rclcpp::get_logger("pointcloud_processor"), "temp_min_x: %f, temp_min_y: %f, temp_max_x: %f, temp_max_y: %f", temp_min_x, temp_min_y, temp_max_x, temp_max_y);
+
+  // 除去したい半径
+  const double exclusion_radius = 0.5;
 
   std::vector<Point3D> output;
   output.reserve(input.size());
@@ -165,10 +167,16 @@ std::vector<Point3D> PointCloudProcessor::filter_points_base_origin(double x, do
     double rotated_z = point.z;
 
     // フィルタリング条件の適用
-    if (rotated_x != 0.0f && rotated_y != 0.0f && rotated_z != 0.0f &&
-        rotated_x >= temp_min_x && rotated_x <= temp_max_x &&
-        rotated_y >= temp_min_y && rotated_y <= temp_max_y &&
-        rotated_z >= temp_min_z && rotated_z <= temp_max_z)
+    bool within_bounds = rotated_x != 0.0f && rotated_y != 0.0f && rotated_z != 0.0f &&
+                         rotated_x >= temp_min_x && rotated_x <= temp_max_x &&
+                         rotated_y >= temp_min_y && rotated_y <= temp_max_y &&
+                         rotated_z >= temp_min_z && rotated_z <= temp_max_z;
+
+    // 距離による除去条件の追加
+    double distance_squared = point.x * point.x + point.y * point.y + point.z * point.z;
+    bool outside_exclusion = distance_squared >= (exclusion_radius * exclusion_radius);
+
+    if (within_bounds && outside_exclusion)
     {
       // 回転後の座標を元に戻す
       Point3D output_point;

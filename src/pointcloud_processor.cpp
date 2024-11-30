@@ -139,6 +139,66 @@ std::vector<Point3D> PointCloudProcessor::axis_image2robot(const std::vector<Poi
   return swapped;
 }
 
+std::vector<Point3D> PointCloudProcessor::filter_points_base_origin(double x, double y, double angle, const std::vector<Point3D> &input) const
+{
+  // 回転行列の計算
+  double cos_angle = std::cos(angle);
+  double sin_angle = std::sin(angle);
+
+  // ロボットの位置から抽出範囲を設定
+  double temp_min_x = params_.min_x - x;
+  double temp_min_y = params_.min_y - y;
+  double temp_max_x = params_.max_x - x;
+  double temp_max_y = params_.max_y - y;
+  double temp_min_z = params_.min_z;
+  double temp_max_z = params_.max_z;
+  // RCLCPP_INFO(rclcpp::get_logger("pointcloud_processor"), "temp_min_x: %f, temp_min_y: %f, temp_max_x: %f, temp_max_y: %f", temp_min_x, temp_min_y, temp_max_x, temp_max_y);
+
+  std::vector<Point3D> output;
+  output.reserve(input.size());
+
+  for (const auto &point : input)
+  {
+    // ロボットの角度に合わせて点を回転
+    double rotated_x = point.x * cos_angle + point.y * sin_angle;
+    double rotated_y = -(-point.x * sin_angle + point.y * cos_angle);
+    double rotated_z = point.z;
+
+    // フィルタリング条件の適用
+    if (rotated_x != 0.0f && rotated_y != 0.0f && rotated_z != 0.0f &&
+        rotated_x >= temp_min_x && rotated_x <= temp_max_x &&
+        rotated_y >= temp_min_y && rotated_y <= temp_max_y &&
+        rotated_z >= temp_min_z && rotated_z <= temp_max_z)
+    {
+      // 回転後の座標を元に戻す
+      Point3D output_point;
+      output_point.x = point.x;
+      output_point.y = point.y;
+      output_point.z = point.z;
+      output.emplace_back(output_point);
+    }
+  }
+  return output;
+}
+
+std::vector<Point3D> PointCloudProcessor::filter_points_pre(const std::vector<Point3D> &input) const
+{
+  double min_x = 0.0;
+  double max_x = 3.0;
+  std::vector<Point3D> output;
+  for (const auto &point : input)
+  {
+    if (point.x != 0.0f && point.y != 0.0f && point.z != 0.0f &&
+        point.x >= min_x && point.x <= max_x &&
+        point.y >= params_.min_y && point.y <= params_.max_y &&
+        point.z >= params_.min_z && point.z <= params_.max_z)
+    {
+      output.push_back(point);
+    }
+  }
+  return output;
+}
+
 std::vector<Point3D> PointCloudProcessor::filter_points(const std::vector<Point3D> &input) const
 {
   std::vector<Point3D> output;
@@ -154,7 +214,6 @@ std::vector<Point3D> PointCloudProcessor::filter_points(const std::vector<Point3
   }
   return output;
 }
-
 // void PointCloudProcessor::voxel_downsample(const std::vector<Point3D> &input)
 // {
 //   std::unordered_map<std::string, std::vector<Point3D>> voxel_map;

@@ -23,6 +23,7 @@ public:
   std::vector<Point3D> filter_points(const std::vector<Point3D> &input) const;
   std::vector<Point3D> filter_points_pre(const std::vector<Point3D> &input) const;
   std::vector<Point3D> filter_points_base_origin(double x, double y, double angle, const std::vector<Point3D> &input) const;
+  std::vector<Point3D> transform_pointcloud(double x, double y, double angle, const std::vector<Point3D> &input) const;
 
 private:
   Parameters params_;

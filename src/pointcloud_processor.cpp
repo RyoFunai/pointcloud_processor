@@ -181,6 +181,32 @@ std::vector<Point3D> PointCloudProcessor::filter_points_base_origin(double x, do
   return output;
 }
 
+std::vector<Point3D> PointCloudProcessor::transform_pointcloud(double x, double y, double angle, const std::vector<Point3D> &input) const
+{
+  std::vector<Point3D> transformed_points;
+  transformed_points.reserve(input.size());
+
+  double cos_angle = std::cos(angle);
+  double sin_angle = std::sin(angle);
+
+  for (const auto &point : input)
+  {
+    Point3D transformed;
+    // 回転
+    transformed.x = point.x * cos_angle - point.y * sin_angle;
+    transformed.y = point.x * sin_angle + point.y * cos_angle;
+    transformed.z = point.z;
+
+    // 平行移動
+    transformed.x += x;
+    transformed.y += y;
+
+    transformed_points.emplace_back(transformed);
+  }
+
+  return transformed_points;
+}
+
 std::vector<Point3D> PointCloudProcessor::filter_points_pre(const std::vector<Point3D> &input) const
 {
   double min_x = 0.0;

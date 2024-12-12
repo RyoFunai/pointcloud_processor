@@ -20,6 +20,7 @@ public:
   // ベクトルからPointCloud2への変換
   sensor_msgs::msg::PointCloud2 vector_to_PC2(const std::vector<Point3D> &points) const;
   std::vector<Point3D> PC2_to_vector(const sensor_msgs::msg::PointCloud2 &cloud_msg) const;
+  std::vector<Point3D> rotate_pitch(const std::vector<Point3D> &input, int degree) const;
   std::vector<Point3D> filter_points(const std::vector<Point3D> &input) const;
   std::vector<Point3D> filter_points_pre(const std::vector<Point3D> &input) const;
   std::vector<Point3D> filter_points_base_origin(double x, double y, double angle, const std::vector<Point3D> &input) const;

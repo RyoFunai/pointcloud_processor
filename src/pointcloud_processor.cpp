@@ -5,10 +5,7 @@
 #include <chrono>
 #include <rclcpp/rclcpp.hpp>
 
-PointCloudProcessor::PointCloudProcessor(const Parameters &params)
-    : params_(params)
-{
-}
+PointCloudProcessor::PointCloudProcessor(const Parameters &params) : params_(params) {}
 
 std::vector<Point3D> PointCloudProcessor::process_pointcloud_old(const sensor_msgs::msg::PointCloud2 &cloud_msg)
 {
@@ -122,6 +119,30 @@ std::vector<Point3D> PointCloudProcessor::PC2_to_vector(const sensor_msgs::msg::
   return points;
 }
 
+std::vector<Point3D> PointCloudProcessor::rotate_pitch(const std::vector<Point3D> &input, int degree) const
+{
+  std::vector<Point3D> rotated_points;
+  rotated_points.reserve(input.size());
+
+  // 30度をラジアンに変換
+  double angle_rad = degree * M_PI / 180.0;
+
+  // ピッチ方向（Y軸）への回転行列
+  double cos_angle = std::cos(angle_rad);
+  double sin_angle = std::sin(angle_rad);
+
+  for (const auto &point : input)
+  {
+    Point3D rotated;
+    rotated.x = point.x * cos_angle + point.z * sin_angle;
+    rotated.y = point.y;
+    rotated.z = -point.x * sin_angle + point.z * cos_angle;
+    rotated_points.emplace_back(rotated);
+  }
+
+  return rotated_points;
+}
+
 std::vector<Point3D> PointCloudProcessor::axis_image2robot(const std::vector<Point3D> &input) const
 {
   std::vector<Point3D> swapped;
@@ -154,7 +175,7 @@ std::vector<Point3D> PointCloudProcessor::filter_points_base_origin(double x, do
   double temp_max_z = params_.max_z;
 
   // 除去したい半径
-  const double exclusion_radius = 0.5;
+  const double exclusion_radius = 0.7;
 
   std::vector<Point3D> output;
   output.reserve(input.size());

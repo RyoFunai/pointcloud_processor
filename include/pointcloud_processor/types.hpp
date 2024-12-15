@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <array>
+#include <rclcpp/rclcpp.hpp>
 
 // 3次元ポイント構造体
 struct Point3D
@@ -55,6 +56,15 @@ struct VoxelCluster
 
   // デフォルトコンストラクタ
   VoxelCluster() : total_point_count(0), cluster_color{1.0f, 0.0f, 0.0f, 1.0f} {}
+};
+
+// クラスタトラック情報
+struct ClusterTrack
+{
+  int id;
+  Point3D last_centroid;
+  rclcpp::Time last_update_time;
+  int missing_count;
 };
 
 // パラメータ構造体

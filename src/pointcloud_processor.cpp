@@ -175,7 +175,7 @@ std::vector<Point3D> PointCloudProcessor::filter_points_base_origin(double x, do
   double temp_max_z = params_.max_z;
 
   // 除去したい半径
-  const double exclusion_radius = 0.7;
+  const double exclusion_radius = 1.0;
 
   std::vector<Point3D> output;
   output.reserve(input.size());

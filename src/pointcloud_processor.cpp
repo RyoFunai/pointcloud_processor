@@ -199,12 +199,7 @@ std::vector<Point3D> PointCloudProcessor::filter_points_base_origin(double x, do
 
     if (within_bounds && outside_exclusion)
     {
-      // 回転後の座標を元に戻す
-      Point3D output_point;
-      output_point.x = point.x;
-      output_point.y = point.y;
-      output_point.z = point.z;
-      output.emplace_back(output_point);
+      output.emplace_back(point);
     }
   }
   return output;

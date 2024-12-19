@@ -82,4 +82,7 @@ struct Parameters
   double laser_weight, odom_weight_liner, odom_weight_angler;
   int plane_iterations, line_iterations;
   double odom2laser_x, odom2laser_y;
+  double max_distance_for_association;
+  int missing_count_threshold;
+  double ball_vel_min;
 };
